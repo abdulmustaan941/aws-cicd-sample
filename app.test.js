@@ -2,8 +2,8 @@ const request = require('supertest');
 const app = require('./app');
 
 describe('API Endpoints', () => {
-  test('GET / returns welcome message', async () => {
-    const res = await request(app).get('/');
+  test('GET /api returns welcome message', async () => {
+    const res = await request(app).get('/api');
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toBe('Hello from AWS CI/CD Pipeline!');
   });

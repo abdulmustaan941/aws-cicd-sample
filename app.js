@@ -6,7 +6,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.json({
     message: 'Hello from AWS CI/CD Pipeline!',
     version: '1.0.0',
