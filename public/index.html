@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AWS CI/CD Pipeline</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0a0a0a;
+      color: #fff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: radial-gradient(ellipse at 20% 50%, #1a1a4e 0%, transparent 50%),
+                  radial-gradient(ellipse at 80% 20%, #0d2d1a 0%, transparent 50%),
+                  radial-gradient(ellipse at 50% 80%, #2d0d0d 0%, transparent 50%);
+      z-index: -1;
+    }
+
+    /* Navbar */
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 60px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.3rem;
+      font-weight: 700;
+    }
+
+    .logo-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #ff9900, #ff6600);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+    }
+
+    .nav-links { display: flex; gap: 30px; }
+    .nav-links a {
+      color: rgba(255,255,255,0.6);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.3s;
+    }
+    .nav-links a:hover { color: #ff9900; }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 100px 20px 60px;
+      position: relative;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(255, 153, 0, 0.15);
+      border: 1px solid rgba(255, 153, 0, 0.4);
+      color: #ff9900;
+      padding: 6px 18px;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 30px;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.6) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(135deg, #ff9900, #ff6600);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.15rem;
+      color: rgba(255,255,255,0.5);
+      max-width: 560px;
+      margin: 0 auto 40px;
+      line-height: 1.7;
+    }
+
+    .hero-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff9900, #ff6600);
+      color: #fff;
+      padding: 14px 32px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(255, 153, 0, 0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(255, 153, 0, 0.5);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+      padding: 14px 32px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      border: 1px solid rgba(255,255,255,0.1);
+      transition: background 0.2s;
+    }
+    .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+
+    /* Pipeline flow */
+    .pipeline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 60px 20px;
+      flex-wrap: wrap;
+    }
+
+    .pipe-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      position: relative;
+    }
+
+    .pipe-icon {
+      width: 70px;
+      height: 70px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      position: relative;
+      animation: pulse 3s infinite;
+    }
+
+    .pipe-icon.github  { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); animation-delay: 0s; }
+    .pipe-icon.build   { background: rgba(255,153,0,0.1);    border: 1px solid rgba(255,153,0,0.3);    animation-delay: 0.5s; }
+    .pipe-icon.test    { background: rgba(0,200,100,0.1);    border: 1px solid rgba(0,200,100,0.3);    animation-delay: 1s; }
+    .pipe-icon.deploy  { background: rgba(100,100,255,0.1);  border: 1px solid rgba(100,100,255,0.3);  animation-delay: 1.5s; }
+    .pipe-icon.live    { background: rgba(255,80,80,0.1);    border: 1px solid rgba(255,80,80,0.3);    animation-delay: 2s; }
+
+    @keyframes pulse {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    .pipe-label { font-size: 0.8rem; color: rgba(255,255,255,0.5); font-weight: 500; }
+
+    .pipe-arrow {
+      width: 50px;
+      height: 2px;
+      background: linear-gradient(90deg, rgba(255,153,0,0.5), rgba(255,153,0,0.1));
+      position: relative;
+      margin: 0 4px;
+      margin-bottom: 24px;
+    }
+    .pipe-arrow::after {
+      content: '▶';
+      position: absolute;
+      right: -8px;
+      top: -8px;
+      color: rgba(255,153,0,0.5);
+      font-size: 0.7rem;
+    }
+
+    /* Stats */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 20px 80px;
+    }
+
+    .stat-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 28px;
+      text-align: center;
+      transition: border-color 0.3s;
+    }
+    .stat-card:hover { border-color: rgba(255,153,0,0.4); }
+
+    .stat-number {
+      font-size: 2.5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ff9900, #ff6600);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .stat-label { color: rgba(255,255,255,0.4); font-size: 0.85rem; margin-top: 6px; }
+
+    /* Services */
+    .section { padding: 60px 20px; max-width: 1100px; margin: 0 auto; }
+    .section-title {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 50px;
+    }
+    .section-title span { color: #ff9900; }
+
+    .services {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+    }
+
+    .service-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 30px;
+      transition: transform 0.3s, border-color 0.3s;
+    }
+    .service-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255,153,0,0.3);
+    }
+
+    .service-emoji { font-size: 2rem; margin-bottom: 16px; }
+    .service-name { font-weight: 700; font-size: 1.05rem; margin-bottom: 8px; }
+    .service-desc { color: rgba(255,255,255,0.4); font-size: 0.88rem; line-height: 1.6; }
+
+    /* Status bar */
+    .status-bar {
+      background: rgba(0, 200, 100, 0.08);
+      border: 1px solid rgba(0, 200, 100, 0.2);
+      border-radius: 12px;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 500px;
+      margin: 0 auto 60px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      background: #00c864;
+      border-radius: 50%;
+      animation: blink 1.5s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    .status-text { color: rgba(255,255,255,0.7); font-size: 0.9rem; }
+    .status-text strong { color: #00c864; }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 30px;
+      color: rgba(255,255,255,0.2);
+      font-size: 0.85rem;
+      border-top: 1px solid rgba(255,255,255,0.05);
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      AWS CI/CD
+    </div>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/health">Health</a>
+      <a href="/users">Users API</a>
+    </div>
+  </nav>
+
+  <section class="hero">
+    <div class="badge">🚀 Live on AWS</div>
+    <h1>Automated <span>CI/CD Pipeline</span><br/>on AWS</h1>
+    <p>Every git push automatically builds, tests, and deploys your application to EC2 using AWS CodePipeline.</p>
+    <div class="hero-buttons">
+      <a href="/health" class="btn-primary">Check Health</a>
+      <a href="/users" class="btn-secondary">View API</a>
+    </div>
+  </section>
+
+  <div class="pipeline">
+    <div class="pipe-step">
+      <div class="pipe-icon github">🐙</div>
+      <span class="pipe-label">GitHub</span>
+    </div>
+    <div class="pipe-arrow"></div>
+    <div class="pipe-step">
+      <div class="pipe-icon build">🔨</div>
+      <span class="pipe-label">CodeBuild</span>
+    </div>
+    <div class="pipe-arrow"></div>
+    <div class="pipe-step">
+      <div class="pipe-icon test">✅</div>
+      <span class="pipe-label">Tests</span>
+    </div>
+    <div class="pipe-arrow"></div>
+    <div class="pipe-step">
+      <div class="pipe-icon deploy">🚀</div>
+      <span class="pipe-label">CodeDeploy</span>
+    </div>
+    <div class="pipe-arrow"></div>
+    <div class="pipe-step">
+      <div class="pipe-icon live">🌐</div>
+      <span class="pipe-label">EC2 Live</span>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <div class="status-dot"></div>
+    <div class="status-text">Pipeline is <strong>active</strong> — deployed successfully on AWS EC2</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-number">4</div>
+      <div class="stat-label">AWS Services Connected</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">3</div>
+      <div class="stat-label">Tests Passing</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">100%</div>
+      <div class="stat-label">Code Coverage</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">0</div>
+      <div class="stat-label">Manual Steps</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Powered by <span>AWS Services</span></h2>
+    <div class="services">
+      <div class="service-card">
+        <div class="service-emoji">📦</div>
+        <div class="service-name">CodePipeline</div>
+        <div class="service-desc">Orchestrates the entire CI/CD workflow automatically on every git push.</div>
+      </div>
+      <div class="service-card">
+        <div class="service-emoji">🔨</div>
+        <div class="service-name">CodeBuild</div>
+        <div class="service-desc">Installs dependencies, runs Jest tests, and packages the application.</div>
+      </div>
+      <div class="service-card">
+        <div class="service-emoji">🚀</div>
+        <div class="service-name">CodeDeploy</div>
+        <div class="service-desc">Deploys the application to EC2 with zero-downtime lifecycle hooks.</div>
+      </div>
+      <div class="service-card">
+        <div class="service-emoji">☁️</div>
+        <div class="service-name">EC2 Ubuntu</div>
+        <div class="service-desc">Runs the Node.js app with PM2 process manager for reliability.</div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Built with ❤️ using AWS CodePipeline · CodeBuild · CodeDeploy · EC2
+  </footer>
+
+</body>
+</html>
